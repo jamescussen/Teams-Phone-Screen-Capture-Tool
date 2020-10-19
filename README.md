@@ -4,4 +4,4 @@ Hello, this is a PowerShell based tool for easily screen capturing on a Microsof
 
 ![Image](https://github.com/jamescussen/TeamsPhoneScreenCaptureTool/raw/main/ScreenCapture.png)
 
-![Image](https://github.com/jamescussen/TeamsPhoneScreenCaptureTool/raw/main/GifEditingStudio.png)
+![Image](https://github.com/jamescussen/TeamsPhoneScreenCaptureTool/raw/main/GifEditingStudio-sm.png)
