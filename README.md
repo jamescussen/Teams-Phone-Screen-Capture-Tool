@@ -5,3 +5,11 @@ Hello, this is a PowerShell based tool for easily screen capturing on a Microsof
 ![Image](https://github.com/jamescussen/TeamsPhoneScreenCaptureTool/raw/main/ScreenCapture.png)
 
 ![Image](https://github.com/jamescussen/TeamsPhoneScreenCaptureTool/raw/main/GifEditingStudio-sm.png)
+
+**Updates:**
+
+Updated to 1.01:
+  - Updated to support for non-Teams CCX and VVX phones
+  - Support for PowerShell Version 7
+  
+  
