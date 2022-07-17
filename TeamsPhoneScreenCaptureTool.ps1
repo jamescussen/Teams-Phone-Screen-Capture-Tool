@@ -1,13 +1,13 @@
 ########################################################################
 # Name: Teams Phone Screen Capture Tool
-# Version: v1.0.0 (20/10/2020)
+# Version: v1.0.1 (15/7/2022)
 # Original Release Date: 20/10/2020
 # Created By: James Cussen
 # Web Site: http://www.myteamslab.com
 # Notes: This is a PowerShell tool. To run the tool, open it from the PowerShell command line or right click on it and select "Run with PowerShell".
 #		 For more information on the requirements for setting up and using this tool please visit http://www.myteamslab.com.
 #
-# Copyright: Copyright (c) 2020, James Cussen (www.myteamslab.com) All rights reserved.
+# Copyright: Copyright (c) 2022, James Cussen (www.myteamslab.com) All rights reserved.
 # Licence: 	Redistribution and use of script, source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 #				1) Redistributions of script code must retain the above copyright notice, this list of conditions and the following disclaimer.
 #				2) Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -21,6 +21,10 @@
 # Release Notes:
 # 1.00 - Initial Release
 #
+# 1.01 - Poly Phone and PowerShell v7 Update
+#	- Updated to support for non-Teams CCX and VVX phones
+#	- Support for PowerShell Version 7
+#
 #########################################################################
 
 
@@ -28,7 +32,7 @@
 param (
 [parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 [ValidateNotNullOrEmpty()]
-[string] $IPAddress = "10.0.0.10",
+[string] $IPAddress = "10.0.0.238",
 
 [parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 [ValidateNotNullOrEmpty()]
@@ -37,28 +41,71 @@ param (
 
 [parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 [ValidateNotNullOrEmpty()]
-[string] $Password = "456"
+[string] $Password = "12345"
 )
 
 
 $theVersion = $PSVersionTable.PSVersion
 $MajorVersion = $theVersion.Major
+$MinorVersion = $theVersion.Minor
 
+$OS = [environment]::OSVersion
+if($OS -match "Windows")
+{
+	Write-Host "This is a Windows Machine. CHECK PASSED!" -foreground "green"
+}
+else
+{
+	Write-Host "This is not a Windows machine. You're in untested territory, good luck. If it doesn't work, try Windows." -foreground "Yellow"	
+}
+
+$DotNetCoreCommands = $false
 Write-Host ""
 Write-Host "--------------------------------------------------------------"
-Write-Host "PowerShell Version Check..." -foreground "yellow"
+Write-Host "Powershell Version Check..." -foreground "yellow"
+Write-Host "Powershell Version ${MajorVersion}.${MinorVersion}" -foreground "yellow"
 if($MajorVersion -eq  "1")
 {
-	Write-Host "This machine only has Version 1 PowerShell installed.  This version of PowerShell is not supported." -foreground "red"
+	Write-Host "This machine only has Version 1 Powershell installed.  This version of Powershell is not supported." -foreground "red"
 	exit
 }
 elseif($MajorVersion -eq  "2")
 {
-	Write-Host "This machine has Version 2 PowerShell installed. This version of PowerShell is not supported." -foreground "red"
+	Write-Host "This machine has Version 2 Powershell installed. This version of Powershell is not supported." -foreground "red"
 	exit
 }
+elseif($MajorVersion -eq  "3")
+{
+	Write-Host "This machine has version 3 Powershell installed. CHECK PASSED!" -foreground "green"
+}
+elseif($MajorVersion -eq  "4")
+{
+	Write-Host "This machine has version 4 Powershell installed. CHECK PASSED!" -foreground "green"
+}
+elseif($MajorVersion -eq  "5")
+{
+	Write-Host "This machine has version 5 Powershell installed. CHECK PASSED!" -foreground "green"
+}
+elseif($MajorVersion -eq  "6")
+{
+	Write-Host "ERROR: This machine has version 6 Powershell installed. It's recommended that you upgrade to a minimum of Version 7" -foreground "red"
+	exit
+}
+elseif($MajorVersion -eq  "7")
+{
+	Write-Host "This machine has version 7 Powershell installed. CHECK PASSED!" -foreground "green"
+	$DotNetCoreCommands = $true
+}
+else
+{
+	Write-Host "This machine has version ${MajorVersion}.${MinorVersion} of Powershell installed. This tool in GUI mode is not supported with this version. Try command line mode instead." -foreground "red"
+	exit
+}
+Write-Host "--------------------------------------------------------------"
+Write-Host ""
 
-
+if(!$DotNetCoreCommands) #PowerShell 7 doesn't like this using -SkipCertificateCheck instead
+{
 add-type @"
         using System.Net;
         using System.Security.Cryptography.X509Certificates;
@@ -73,8 +120,8 @@ add-type @"
         }
 "@
 [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy 
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls11
-
+}
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls11 -bor [System.Net.SecurityProtocolType]::Tls12
 
 
 
@@ -84,7 +131,7 @@ add-type @"
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
 
 $objForm = New-Object System.Windows.Forms.Form 
-$objForm.Text = "Teams Phone Screen Capture Tool 1.00"
+$objForm.Text = "Teams Phone Screen Capture Tool 1.01"
 $objForm.Size = New-Object System.Drawing.Size(390,220) 
 $objForm.MinimumSize = New-Object System.Drawing.Size(300,220) 
 $objForm.StartPosition = "CenterScreen"
@@ -98,7 +145,7 @@ $objForm.TabStop = $false
 
 $MyLinkLabel = New-Object System.Windows.Forms.LinkLabel
 $MyLinkLabel.Location = New-Object System.Drawing.Size(220,10)
-$MyLinkLabel.Size = New-Object System.Drawing.Size(130,15)
+$MyLinkLabel.Size = New-Object System.Drawing.Size(135,15)
 $MyLinkLabel.DisabledLinkColor = [System.Drawing.Color]::Red
 $MyLinkLabel.VisitedLinkColor = [System.Drawing.Color]::Blue
 $MyLinkLabel.LinkBehavior = [System.Windows.Forms.LinkBehavior]::HoverUnderline
@@ -240,6 +287,7 @@ function ShowScreen([string]$IPAddress, [string] $Brand, [string] $Password)
 	$SyncHash.Brand = $Brand
 	$SyncHash.Port = "443"
 	$SyncHash.Image = $null
+	$SyncHash.DotNetCoreCommands = $DotNetCoreCommands
 	if($SyncHash.Brand -eq "Poly")
 	{
 		$SyncHash.HTTPUsername = "Polycom"
@@ -364,7 +412,6 @@ function ShowScreen([string]$IPAddress, [string] $Brand, [string] $Password)
 				[System.Windows.Forms.Application]::DoEvents()
 			}
 		}	
-		
 		elseif(!$SyncHash.screenConnected)
 		{
 			$SyncHash.PictureBox.sizemode = "Autosize"
@@ -418,8 +465,7 @@ function ShowScreen([string]$IPAddress, [string] $Brand, [string] $Password)
 	{
 		Write-Host "INFO: Closing window" -foreground yellow
 		$SyncHash.boolWhile = $false
-	}
-	)
+	})
 	
      
     # Add all of the controls to the form
@@ -448,59 +494,81 @@ function ShowScreen([string]$IPAddress, [string] $Brand, [string] $Password)
 	
 	While($SyncHash.boolWhile)
 	{
-		if($SyncHash.UseHTTPS)
-		{
-			try {
-				if($SyncHash.Brand -eq "Poly")
-				{
-					$PhoneUrl = "https://${theIPAddress}:${thePort}/captureScreen/mainScreen"
-				}
-				elseif($SyncHash.Brand -eq "Yealink")
-				{
-					$PhoneUrl = "https://${theIPAddress}:${thePort}/screencapture/download"
-				}
 				
-			} catch {
-				Write-Host "ERROR: Failed to connect to phone..." -foreground "red"
-				Write-Host "Exception:" $_.Exception.Message -foreground "red"
-				if($_.Exception.Response.StatusCode.value__ -eq "")
+		if($SyncHash.Brand -eq "Poly")
+		{
+			$PhoneUrl = "https://${theIPAddress}:${thePort}/captureScreen/mainScreen"
+		}
+		elseif($SyncHash.Brand -eq "Yealink")
+		{
+			$PhoneUrl = "https://${theIPAddress}:${thePort}/screencapture/download"
+		}
+		
+		$sessionText = ""
+		if($SyncHash.Brand -eq "Poly")
+		{
+			
+			$user = $SyncHash.HTTPUsername
+			$pass = $SyncHash.HTTPPassword
+			$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user,$pass)))
+			try{
+				if($SyncHash.DotNetCoreCommands)
 				{
-					Write-Host "StatusCode:" $_.Exception.Response.StatusCode.value__ -foreground "red"
-					Write-Host "StatusDescription:" $_.Exception.Response.StatusDescription -foreground "red"
+					$r = Invoke-WebRequest -Uri "https://${theIPAddress}:${thePort}/form-submit/auth.htm" -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -Method POST -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0" -SessionVariable so -SkipCertificateCheck
+				}
+				else
+				{
+					$r = Invoke-WebRequest -Uri "https://${theIPAddress}:${thePort}/form-submit/auth.htm" -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -Method POST -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0"
 				}
 			}
-		}
-		else
-		{
-			try {
-				
-				if($SyncHash.Brand -eq "Poly")
-				{
-					$PhoneUrl = "http://${theIPAddress}:${thePort}/captureScreen/mainScreen"
-				}
-				elseif($SyncHash.Brand -eq "Yealink")
-				{
-					$PhoneUrl = "http://${theIPAddress}:${thePort}/screencapture/download"
-				}
-				
-			} catch {
-				Write-Host "ERROR: Failed to connect to phone..." -foreground "red"
-				Write-Host "Exception:" $_.Exception.Message -foreground "red"
-				if($_.Exception.Response.StatusCode.value__ -eq "")
-				{
-					Write-Host "StatusCode:" $_.Exception.Response.StatusCode.value__ -foreground "red"
-					Write-Host "StatusDescription:" $_.Exception.Response.StatusDescription -foreground "red"
-				}
+			catch
+			{
+				Write-Host "ERROR: " $_ -foreground red
+				Write-Host "It looks like the phone doesn't have the web interface enabled. Make sure that you have enabled the web interface!" -foreground red
+				$ConnectError = $true		
+			}
+			
+			$sessionText = ""
+			if($r.StatusCode -eq 200 -and !($r.Content -imatch "INVALID_LOGIN") -and !($ConnectError))
+			{
+				$cookieSession = $r.Headers."Set-Cookie"
+				$sessionC = $cookieSession -split ";"
+				$sessionText = $sessionC[0]
+			}
+			else
+			{
+				Write-Host "ERROR: Failed to get session cookie" -foreground "red"
 			}
 		}
 		
-		$WebClient = $null
-		$WebClient = New-Object System.Net.WebClient
-		$WebClient.Timeout = 800
-		$WebClient.Credentials = New-Object System.Net.NetworkCredential($SyncHash.HTTPUsername,$SyncHash.HTTPPassword)
-		 
 		Try {
-			[System.Drawing.Image] $Image = $WebClient.DownloadData($PhoneUrl)
+			if($SyncHash.DotNetCoreCommands)
+			{
+				if($SyncHash.Brand -eq "Poly")
+				{
+					$response = Invoke-WebRequest -Uri $PhoneUrl -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -Method GET -WebSession $so -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0" -TimeoutSec 3 -SkipCertificateCheck
+				}
+				else
+				{
+					$user = $SyncHash.HTTPUsername
+					$pass = $SyncHash.HTTPPassword
+					$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user,$pass)))
+					$response = Invoke-WebRequest -Uri $PhoneUrl -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -Method GET -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0" -TimeoutSec 3 -SkipCertificateCheck
+				}
+				[System.Drawing.Image] $Image = $response.Content
+			}
+			else
+			{
+				$WebClient = $null
+				$WebClient = New-Object System.Net.WebClient
+				$WebClient.Credentials = New-Object System.Net.NetworkCredential($SyncHash.HTTPUsername,$SyncHash.HTTPPassword)
+				if($SyncHash.Brand -eq "Poly" -and $sessionText -ne "")
+				{
+					$WebClient.Headers.Add("Cookie", "$sessionText")
+				}
+				[System.Drawing.Image] $Image = $WebClient.DownloadData($PhoneUrl)
+			}
+			
 		} 
 		Catch [Exception] {
 			$theError = $_.Exception.Message
@@ -567,8 +635,6 @@ function ShowScreen([string]$IPAddress, [string] $Brand, [string] $Password)
 					$SyncHash.StopRecordGifButton.Enabled = $false
 					$SyncHash.SaveImageButton.Enabled = $true
 				}
-				
-				
 				$RetryTimer = 1
 				
 			}
@@ -678,7 +744,8 @@ function EditGifDialog([array] $ImageArray)
 	$PictureBox.height = 280
 	$PictureBox.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Left
 	$PictureBox.BorderStyle = "FixedSingle"
-	$PictureBox.sizemode = "Zoom"
+	#$PictureBox.sizemode = "Zoom"
+	$PictureBox.sizemode = 4
 	$PictureBox.Margin = 10
 	#$PictureBox.ForeColor = [System.Drawing.Color]::Black
 	$PictureBox.WaitOnLoad = $true
@@ -740,7 +807,7 @@ function EditGifDialog([array] $ImageArray)
 				
 				$imgForGraph = New-Object System.Drawing.Bitmap($img.Width, $img.Height)
 				[System.Drawing.Graphics] $graph = [System.Drawing.Graphics]::FromImage($imgForGraph) #Converting image to stop indexed image error on GIFs
-				$graph.DrawImage($img, 0, 0)
+				$graph.DrawImage($img, 0, 0, [int]$img.Width, [int]$img.Height)
 				
 				[System.Drawing.Pen] $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::Gray, $lineThickness)
 				
@@ -1266,7 +1333,7 @@ function EditGifDialog([array] $ImageArray)
 		
 		$imgForGraph = New-Object System.Drawing.Bitmap($img.Width, $img.Height)
 		[System.Drawing.Graphics] $graph = [System.Drawing.Graphics]::FromImage($imgForGraph) #Converting image to stop indexed image error on GIFs
-		$graph.DrawImage($img, 0, 0)
+		$graph.DrawImage($img, 0, 0, [int]$img.Width, [int]$img.Height)
 		
 		foreach ($item in $lv.Items)
 		{
@@ -1340,8 +1407,8 @@ function EditGifDialog([array] $ImageArray)
 				}
 			}
 		}
-		$graph.Dispose()
 		$PictureBox.Image = $imgForGraph
+		$graph.Dispose()
 		$imgForGraph = $null
 	}
 
@@ -1609,7 +1676,7 @@ function EditGifDialog([array] $ImageArray)
 			{
 				$imgForGraph = New-Object System.Drawing.Bitmap($img.Width, $img.Height)
 				[System.Drawing.Graphics] $graph = [System.Drawing.Graphics]::FromImage($imgForGraph) #Converting image to stop indexed image error on GIFs
-				$graph.DrawImage($img, 0, 0)
+				$graph.DrawImage($img, 0, 0, [int]$img.Width, [int]$img.Height)
 				
 					
 				foreach ($item in $lv.Items)
@@ -2095,7 +2162,7 @@ public class GifWriter
 
     Write-Host 'INFO: Adding GifWriter Class Assembly' -foreground yellow
     try {
-        Add-Type $GifWriter -ReferencedAssemblies 'System.Windows.Forms', 'System.Drawing'
+		Add-Type $GifWriter -ReferencedAssemblies 'System.Windows.Forms', 'System.Drawing', 'System.Drawing.Common', 'System.Threading'
 
 		Write-Host "INFO: Saving GIF to file location: $FileLocation" -foreground green
 		if($InfiniteLoops)
@@ -2122,10 +2189,10 @@ $objForm.Add_Shown({$objForm.Activate()})
 
 
 # SIG # Begin signature block
-# MIIcfQYJKoZIhvcNAQcCoIIcbjCCHGoCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# MIIjgAYJKoZIhvcNAQcCoIIjcTCCI20CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQ7/TgULDERKvYFRMkkbdSd/O
-# EYigghesMIIFMDCCBBigAwIBAgIQBAkYG1/Vu2Z1U0O1b5VQCDANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5MHQYhDvZsRv2UcHr7FFyadK
+# aQeggh2eMIIFMDCCBBigAwIBAgIQBAkYG1/Vu2Z1U0O1b5VQCDANBgkqhkiG9w0B
 # AQsFADBlMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMSQwIgYDVQQDExtEaWdpQ2VydCBBc3N1cmVk
 # IElEIFJvb3QgQ0EwHhcNMTMxMDIyMTIwMDAwWhcNMjgxMDIyMTIwMDAwWjByMQsw
@@ -2180,99 +2247,136 @@ $objForm.Add_Shown({$objForm.Activate()})
 # D5qbdhNZ6npS9wXQRdHhCvIvJhJKxXYvEIE9VYao3kTgiylJvDfdvMDN4gRIx/aR
 # ckJQQzRxYIhbfR/zV4RSeSHwvMg827e2v/YVcLXFjFsoMb0ioy+qQkwFwVz1mo4l
 # PnXXFelUbN0LkWLHsdAxqwATNQHA150SmTpS7tm4Ye2m23lgVlwgGgR2JghWz6bK
-# VI+nm+UfACOdvpXnjBIIDyMNUl9tRx4eo6xyxfUSVASQ3kswggZqMIIFUqADAgEC
-# AhADAZoCOv9YsWvW1ermF/BmMA0GCSqGSIb3DQEBBQUAMGIxCzAJBgNVBAYTAlVT
+# VI+nm+UfACOdvpXnjBIIDyMNUl9tRx4eo6xyxfUSVASQ3kswggWxMIIEmaADAgEC
+# AhABJAr7HjgLihbxS3Gd9NPAMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYTAlVT
 # MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
-# b20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQgSUQgQ0EtMTAeFw0xNDEwMjIw
-# MDAwMDBaFw0yNDEwMjIwMDAwMDBaMEcxCzAJBgNVBAYTAlVTMREwDwYDVQQKEwhE
-# aWdpQ2VydDElMCMGA1UEAxMcRGlnaUNlcnQgVGltZXN0YW1wIFJlc3BvbmRlcjCC
-# ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKNkXfx8s+CCNeDg9sYq5kl1
-# O8xu4FOpnx9kWeZ8a39rjJ1V+JLjntVaY1sCSVDZg85vZu7dy4XpX6X51Id0iEQ7
-# Gcnl9ZGfxhQ5rCTqqEsskYnMXij0ZLZQt/USs3OWCmejvmGfrvP9Enh1DqZbFP1F
-# I46GRFV9GIYFjFWHeUhG98oOjafeTl/iqLYtWQJhiGFyGGi5uHzu5uc0LzF3gTAf
-# uzYBje8n4/ea8EwxZI3j6/oZh6h+z+yMDDZbesF6uHjHyQYuRhDIjegEYNu8c3T6
-# Ttj+qkDxss5wRoPp2kChWTrZFQlXmVYwk/PJYczQCMxr7GJCkawCwO+k8IkRj3cC
-# AwEAAaOCAzUwggMxMA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMBYGA1Ud
-# JQEB/wQMMAoGCCsGAQUFBwMIMIIBvwYDVR0gBIIBtjCCAbIwggGhBglghkgBhv1s
-# BwEwggGSMCgGCCsGAQUFBwIBFhxodHRwczovL3d3dy5kaWdpY2VydC5jb20vQ1BT
-# MIIBZAYIKwYBBQUHAgIwggFWHoIBUgBBAG4AeQAgAHUAcwBlACAAbwBmACAAdABo
-# AGkAcwAgAEMAZQByAHQAaQBmAGkAYwBhAHQAZQAgAGMAbwBuAHMAdABpAHQAdQB0
-# AGUAcwAgAGEAYwBjAGUAcAB0AGEAbgBjAGUAIABvAGYAIAB0AGgAZQAgAEQAaQBn
-# AGkAQwBlAHIAdAAgAEMAUAAvAEMAUABTACAAYQBuAGQAIAB0AGgAZQAgAFIAZQBs
-# AHkAaQBuAGcAIABQAGEAcgB0AHkAIABBAGcAcgBlAGUAbQBlAG4AdAAgAHcAaABp
-# AGMAaAAgAGwAaQBtAGkAdAAgAGwAaQBhAGIAaQBsAGkAdAB5ACAAYQBuAGQAIABh
-# AHIAZQAgAGkAbgBjAG8AcgBwAG8AcgBhAHQAZQBkACAAaABlAHIAZQBpAG4AIABi
-# AHkAIAByAGUAZgBlAHIAZQBuAGMAZQAuMAsGCWCGSAGG/WwDFTAfBgNVHSMEGDAW
-# gBQVABIrE5iymQftHt+ivlcNK2cCzTAdBgNVHQ4EFgQUYVpNJLZJMp1KKnkag0v0
-# HonByn0wfQYDVR0fBHYwdDA4oDagNIYyaHR0cDovL2NybDMuZGlnaWNlcnQuY29t
-# L0RpZ2lDZXJ0QXNzdXJlZElEQ0EtMS5jcmwwOKA2oDSGMmh0dHA6Ly9jcmw0LmRp
-# Z2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRENBLTEuY3JsMHcGCCsGAQUFBwEB
-# BGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEEGCCsG
-# AQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1
-# cmVkSURDQS0xLmNydDANBgkqhkiG9w0BAQUFAAOCAQEAnSV+GzNNsiaBXJuGziMg
-# D4CH5Yj//7HUaiwx7ToXGXEXzakbvFoWOQCd42yE5FpA+94GAYw3+puxnSR+/iCk
-# V61bt5qwYCbqaVchXTQvH3Gwg5QZBWs1kBCge5fH9j/n4hFBpr1i2fAnPTgdKG86
-# Ugnw7HBi02JLsOBzppLA044x2C/jbRcTBu7kA7YUq/OPQ6dxnSHdFMoVXZJB2vkP
-# gdGZdA0mxA5/G7X1oPHGdwYoFenYk+VVFvC7Cqsc21xIJ2bIo4sKHOWV2q7ELlmg
-# Yd3a822iYemKC23sEhi991VUQAOSK2vCUcIKSK+w1G7g9BQKOhvjjz3Kr2qNe9zY
-# RDCCBs0wggW1oAMCAQICEAb9+QOWA63qAArrPye7uhswDQYJKoZIhvcNAQEFBQAw
-# ZTELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQ
-# d3d3LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGlnaUNlcnQgQXNzdXJlZCBJRCBS
-# b290IENBMB4XDTA2MTExMDAwMDAwMFoXDTIxMTExMDAwMDAwMFowYjELMAkGA1UE
-# BhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2lj
-# ZXJ0LmNvbTEhMB8GA1UEAxMYRGlnaUNlcnQgQXNzdXJlZCBJRCBDQS0xMIIBIjAN
-# BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6IItmfnKwkKVpYBzQHDSnlZUXKnE
-# 0kEGj8kz/E1FkVyBn+0snPgWWd+etSQVwpi5tHdJ3InECtqvy15r7a2wcTHrzzpA
-# DEZNk+yLejYIA6sMNP4YSYL+x8cxSIB8HqIPkg5QycaH6zY/2DDD/6b3+6LNb3Mj
-# /qxWBZDwMiEWicZwiPkFl32jx0PdAug7Pe2xQaPtP77blUjE7h6z8rwMK5nQxl0S
-# QoHhg26Ccz8mSxSQrllmCsSNvtLOBq6thG9IhJtPQLnxTPKvmPv2zkBdXPao8S+v
-# 7Iki8msYZbHBc63X8djPHgp0XEK4aH631XcKJ1Z8D2KkPzIUYJX9BwSiCQIDAQAB
-# o4IDejCCA3YwDgYDVR0PAQH/BAQDAgGGMDsGA1UdJQQ0MDIGCCsGAQUFBwMBBggr
-# BgEFBQcDAgYIKwYBBQUHAwMGCCsGAQUFBwMEBggrBgEFBQcDCDCCAdIGA1UdIASC
-# AckwggHFMIIBtAYKYIZIAYb9bAABBDCCAaQwOgYIKwYBBQUHAgEWLmh0dHA6Ly93
-# d3cuZGlnaWNlcnQuY29tL3NzbC1jcHMtcmVwb3NpdG9yeS5odG0wggFkBggrBgEF
-# BQcCAjCCAVYeggFSAEEAbgB5ACAAdQBzAGUAIABvAGYAIAB0AGgAaQBzACAAQwBl
-# AHIAdABpAGYAaQBjAGEAdABlACAAYwBvAG4AcwB0AGkAdAB1AHQAZQBzACAAYQBj
-# AGMAZQBwAHQAYQBuAGMAZQAgAG8AZgAgAHQAaABlACAARABpAGcAaQBDAGUAcgB0
-# ACAAQwBQAC8AQwBQAFMAIABhAG4AZAAgAHQAaABlACAAUgBlAGwAeQBpAG4AZwAg
-# AFAAYQByAHQAeQAgAEEAZwByAGUAZQBtAGUAbgB0ACAAdwBoAGkAYwBoACAAbABp
-# AG0AaQB0ACAAbABpAGEAYgBpAGwAaQB0AHkAIABhAG4AZAAgAGEAcgBlACAAaQBu
-# AGMAbwByAHAAbwByAGEAdABlAGQAIABoAGUAcgBlAGkAbgAgAGIAeQAgAHIAZQBm
-# AGUAcgBlAG4AYwBlAC4wCwYJYIZIAYb9bAMVMBIGA1UdEwEB/wQIMAYBAf8CAQAw
-# eQYIKwYBBQUHAQEEbTBrMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2Vy
-# dC5jb20wQwYIKwYBBQUHMAKGN2h0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9E
-# aWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5jcnQwgYEGA1UdHwR6MHgwOqA4oDaGNGh0
-# dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRFJvb3RDQS5j
-# cmwwOqA4oDaGNGh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3Vy
-# ZWRJRFJvb3RDQS5jcmwwHQYDVR0OBBYEFBUAEisTmLKZB+0e36K+Vw0rZwLNMB8G
-# A1UdIwQYMBaAFEXroq/0ksuCMS1Ri6enIZ3zbcgPMA0GCSqGSIb3DQEBBQUAA4IB
-# AQBGUD7Jtygkpzgdtlspr1LPUukxR6tWXHvVDQtBs+/sdR90OPKyXGGinJXDUOSC
-# uSPRujqGcq04eKx1XRcXNHJHhZRW0eu7NoR3zCSl8wQZVann4+erYs37iy2QwsDS
-# tZS9Xk+xBdIOPRqpFFumhjFiqKgz5Js5p8T1zh14dpQlc+Qqq8+cdkvtX8JLFuRL
-# cEwAiR78xXm8TBJX/l/hHrwCXaj++wc4Tw3GXZG5D2dFzdaD7eeSDY2xaYxP+1ng
-# Iw/Sqq4AfO6cQg7PkdcntxbuD8O9fAqg7iwIVYUiuOsYGk38KiGtSTGDR5V3cdyx
-# G0tLHBCcdxTBnU8vWpUIKRAmMYIEOzCCBDcCAQEwgYYwcjELMAkGA1UEBhMCVVMx
-# FTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNv
-# bTExMC8GA1UEAxMoRGlnaUNlcnQgU0hBMiBBc3N1cmVkIElEIENvZGUgU2lnbmlu
-# ZyBDQQIQCjSHIb+9FkHaGapmaAdBYDAJBgUrDgMCGgUAoHgwGAYKKwYBBAGCNwIB
-# DDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGCNwIBBDAcBgorBgEE
-# AYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQxFgQUUFBK7LxW+S38
-# 8WJoN3L0eETG8B4wDQYJKoZIhvcNAQEBBQAEggEAWhLCRsNgjRzmu0KISjje8282
-# iUD1ylg09M91yh/Hgg9qXEjPEzdyZDOjHom3zSRaTP2MRbmyLoOhvdNmSq2dU2oy
-# OwZ/0N/3fMO54cATtlglPge0wZZE9ZkRqVycMcWD3MxwWnJ3ertn1B2AtEa4zQOk
-# 930ObSFaJ+qZFODbmzcaImFkFpnOPNosJL9VwbyB4qmwbQ5+o1MURyS1nOcaTSO+
-# Yt1pvAXsxjNx3dGWEznzbFRfqceOc0jHg39waAFUkFbhM674RH2wPEW5k4HmdDD/
-# vanoTccxaTs7qw16TRXCaMSXhTBl+k19xxj18H4l2TwLGyj1I5HidScLmfoywaGC
-# Ag8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIBATB2MGIxCzAJBgNVBAYTAlVTMRUw
-# EwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20x
-# ITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQgSUQgQ0EtMQIQAwGaAjr/WLFr1tXq
-# 5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkq
-# hkiG9w0BCQUxDxcNMjAxMDIyMDk0NTQyWjAjBgkqhkiG9w0BCQQxFgQU+s8pi93V
-# XECKwrkDmxfQCciSdxswDQYJKoZIhvcNAQEBBQAEggEAcyol9GAIzsB1pT5W7kUN
-# 74+S/K6TI6lxGjFPau5saaQ8QTWC+qYTtSFDwgby7Cpyf/HhxI8FCv5BGzxLGNPI
-# SxUS+ds3eCMCoVzjASPeeSKiDMz36HAjvjifFuP2GonrcOpaOU12wmdRrw1lJ/aD
-# FTMwIAAXdLlfIXJof1B2e3kxlh4SUurQN2VZuRjlgtcAbxYCc1OZyepFuCRW0HKZ
-# 0VhD7rYF5U2Nya/6qLP1JYocPw9/yphouyvAaXP1JK0Bmmbx1cjU7pD1FBBZnaXp
-# Uh9sOAwljewEd2XoM4oRNQHeMNuCGMNeVcRFM+grtHoe22cNQJmw6eQH5oHbT6B/
-# Gg==
+# b20xJDAiBgNVBAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0yMjA2
+# MDkwMDAwMDBaFw0zMTExMDkyMzU5NTlaMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
+# EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNV
+# BAMTGERpZ2lDZXJ0IFRydXN0ZWQgUm9vdCBHNDCCAiIwDQYJKoZIhvcNAQEBBQAD
+# ggIPADCCAgoCggIBAL/mkHNo3rvkXUo8MCIwaTPswqclLskhPfKK2FnC4SmnPVir
+# dprNrnsbhA3EMB/zG6Q4FutWxpdtHauyefLKEdLkX9YFPFIPUh/GnhWlfr6fqVcW
+# WVVyr2iTcMKyunWZanMylNEQRBAu34LzB4TmdDttceItDBvuINXJIB1jKS3O7F5O
+# yJP4IWGbNOsFxl7sWxq868nPzaw0QF+xembud8hIqGZXV59UWI4MK7dPpzDZVu7K
+# e13jrclPXuU15zHL2pNe3I6PgNq2kZhAkHnDeMe2scS1ahg4AxCN2NQ3pC4FfYj1
+# gj4QkXCrVYJBMtfbBHMqbpEBfCFM1LyuGwN1XXhm2ToxRJozQL8I11pJpMLmqaBn
+# 3aQnvKFPObURWBf3JFxGj2T3wWmIdph2PVldQnaHiZdpekjw4KISG2aadMreSx7n
+# DmOu5tTvkpI6nj3cAORFJYm2mkQZK37AlLTSYW3rM9nF30sEAMx9HJXDj/chsrIR
+# t7t/8tWMcCxBYKqxYxhElRp2Yn72gLD76GSmM9GJB+G9t+ZDpBi4pncB4Q+UDCEd
+# slQpJYls5Q5SUUd0viastkF13nqsX40/ybzTQRESW+UQUOsxxcpyFiIJ33xMdT9j
+# 7CFfxCBRa2+xq4aLT8LWRV+dIPyhHsXAj6KxfgommfXkaS+YHS312amyHeUbAgMB
+# AAGjggFeMIIBWjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBTs1+OC0nFdZEzf
+# Lmc/57qYrhwPTzAfBgNVHSMEGDAWgBRF66Kv9JLLgjEtUYunpyGd823IDzAOBgNV
+# HQ8BAf8EBAMCAYYwEwYDVR0lBAwwCgYIKwYBBQUHAwgweQYIKwYBBQUHAQEEbTBr
+# MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wQwYIKwYBBQUH
+# MAKGN2h0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJ
+# RFJvb3RDQS5jcnQwRQYDVR0fBD4wPDA6oDigNoY0aHR0cDovL2NybDMuZGlnaWNl
+# cnQuY29tL0RpZ2lDZXJ0QXNzdXJlZElEUm9vdENBLmNybDAgBgNVHSAEGTAXMAgG
+# BmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZIhvcNAQEMBQADggEBAJoWAqUB74H7
+# DbRYsnitqCMZ2XM32mCeUdfL+C9AuaMffEBOMz6QPOeJAXWF6GJ7HVbgcbreXsY3
+# vHlcYgBN+El6UU0GMvPF0gAqJyDqiS4VOeAsPvh1fCyCQWE1DyPQ7TWV0oiVKUPL
+# 4KZYEHxTjp9FySA3FMDtGbp+dznSVJbHphHfNDP2dVJCSxydjZbVlWxHEhQkXyZB
+# +hpGvd6w5ZFHA6wYCMvL22aJfyucZb++N06+LfOdSsPMzEdeyJWVrdHLuyoGIPk/
+# cuo260VyknopexQDPPtN1khxehARigh0zWwbBFzSipUDdlFQU9Yu90pGw64QLHFM
+# sIe2JzdEYEQwggauMIIElqADAgECAhAHNje3JFR82Ees/ShmKl5bMA0GCSqGSIb3
+# DQEBCwUAMGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAX
+# BgNVBAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IFRydXN0
+# ZWQgUm9vdCBHNDAeFw0yMjAzMjMwMDAwMDBaFw0zNzAzMjIyMzU5NTlaMGMxCzAJ
+# BgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE7MDkGA1UEAxMyRGln
+# aUNlcnQgVHJ1c3RlZCBHNCBSU0E0MDk2IFNIQTI1NiBUaW1lU3RhbXBpbmcgQ0Ew
+# ggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDGhjUGSbPBPXJJUVXHJQPE
+# 8pE3qZdRodbSg9GeTKJtoLDMg/la9hGhRBVCX6SI82j6ffOciQt/nR+eDzMfUBML
+# JnOWbfhXqAJ9/UO0hNoR8XOxs+4rgISKIhjf69o9xBd/qxkrPkLcZ47qUT3w1lbU
+# 5ygt69OxtXXnHwZljZQp09nsad/ZkIdGAHvbREGJ3HxqV3rwN3mfXazL6IRktFLy
+# dkf3YYMZ3V+0VAshaG43IbtArF+y3kp9zvU5EmfvDqVjbOSmxR3NNg1c1eYbqMFk
+# dECnwHLFuk4fsbVYTXn+149zk6wsOeKlSNbwsDETqVcplicu9Yemj052FVUmcJgm
+# f6AaRyBD40NjgHt1biclkJg6OBGz9vae5jtb7IHeIhTZgirHkr+g3uM+onP65x9a
+# bJTyUpURK1h0QCirc0PO30qhHGs4xSnzyqqWc0Jon7ZGs506o9UD4L/wojzKQtwY
+# SH8UNM/STKvvmz3+DrhkKvp1KCRB7UK/BZxmSVJQ9FHzNklNiyDSLFc1eSuo80Vg
+# vCONWPfcYd6T/jnA+bIwpUzX6ZhKWD7TA4j+s4/TXkt2ElGTyYwMO1uKIqjBJgj5
+# FBASA31fI7tk42PgpuE+9sJ0sj8eCXbsq11GdeJgo1gJASgADoRU7s7pXcheMBK9
+# Rp6103a50g5rmQzSM7TNsQIDAQABo4IBXTCCAVkwEgYDVR0TAQH/BAgwBgEB/wIB
+# ADAdBgNVHQ4EFgQUuhbZbU2FL3MpdpovdYxqII+eyG8wHwYDVR0jBBgwFoAU7Nfj
+# gtJxXWRM3y5nP+e6mK4cD08wDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoGCCsG
+# AQUFBwMIMHcGCCsGAQUFBwEBBGswaTAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Au
+# ZGlnaWNlcnQuY29tMEEGCCsGAQUFBzAChjVodHRwOi8vY2FjZXJ0cy5kaWdpY2Vy
+# dC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0LmNydDBDBgNVHR8EPDA6MDigNqA0
+# hjJodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRUcnVzdGVkUm9vdEc0
+# LmNybDAgBgNVHSAEGTAXMAgGBmeBDAEEAjALBglghkgBhv1sBwEwDQYJKoZIhvcN
+# AQELBQADggIBAH1ZjsCTtm+YqUQiAX5m1tghQuGwGC4QTRPPMFPOvxj7x1Bd4ksp
+# +3CKDaopafxpwc8dB+k+YMjYC+VcW9dth/qEICU0MWfNthKWb8RQTGIdDAiCqBa9
+# qVbPFXONASIlzpVpP0d3+3J0FNf/q0+KLHqrhc1DX+1gtqpPkWaeLJ7giqzl/Yy8
+# ZCaHbJK9nXzQcAp876i8dU+6WvepELJd6f8oVInw1YpxdmXazPByoyP6wCeCRK6Z
+# JxurJB4mwbfeKuv2nrF5mYGjVoarCkXJ38SNoOeY+/umnXKvxMfBwWpx2cYTgAnE
+# tp/Nh4cku0+jSbl3ZpHxcpzpSwJSpzd+k1OsOx0ISQ+UzTl63f8lY5knLD0/a6fx
+# ZsNBzU+2QJshIUDQtxMkzdwdeDrknq3lNHGS1yZr5Dhzq6YBT70/O3itTK37xJV7
+# 7QpfMzmHQXh6OOmc4d0j/R0o08f56PGYX/sr2H7yRp11LB4nLCbbbxV7HhmLNriT
+# 1ObyF5lZynDwN7+YAN8gFk8n+2BnFqFmut1VwDophrCYoCvtlUG3OtUVmDG0YgkP
+# Cr2B2RP+v6TR81fZvAT6gt4y3wSJ8ADNXcL50CN/AAvkdgIm2fBldkKmKYcJRyvm
+# fxqkhQ/8mJb2VVQrH4D6wPIOK+XW+6kvRBVK5xMOHds3OBqhK/bt1nz8MIIGxjCC
+# BK6gAwIBAgIQCnpKiJ7JmUKQBmM4TYaXnTANBgkqhkiG9w0BAQsFADBjMQswCQYD
+# VQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lD
+# ZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBTSEEyNTYgVGltZVN0YW1waW5nIENBMB4X
+# DTIyMDMyOTAwMDAwMFoXDTMzMDMxNDIzNTk1OVowTDELMAkGA1UEBhMCVVMxFzAV
+# BgNVBAoTDkRpZ2lDZXJ0LCBJbmMuMSQwIgYDVQQDExtEaWdpQ2VydCBUaW1lc3Rh
+# bXAgMjAyMiAtIDIwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQC5KpYj
+# ply8X9ZJ8BWCGPQz7sxcbOPgJS7SMeQ8QK77q8TjeF1+XDbq9SWNQ6OB6zhj+TyI
+# ad480jBRDTEHukZu6aNLSOiJQX8Nstb5hPGYPgu/CoQScWyhYiYB087DbP2sO37c
+# KhypvTDGFtjavOuy8YPRn80JxblBakVCI0Fa+GDTZSw+fl69lqfw/LH09CjPQnkf
+# O8eTB2ho5UQ0Ul8PUN7UWSxEdMAyRxlb4pguj9DKP//GZ888k5VOhOl2GJiZERTF
+# KwygM9tNJIXogpThLwPuf4UCyYbh1RgUtwRF8+A4vaK9enGY7BXn/S7s0psAiqwd
+# jTuAaP7QWZgmzuDtrn8oLsKe4AtLyAjRMruD+iM82f/SjLv3QyPf58NaBWJ+cCzl
+# K7I9Y+rIroEga0OJyH5fsBrdGb2fdEEKr7mOCdN0oS+wVHbBkE+U7IZh/9sRL5ID
+# MM4wt4sPXUSzQx0jUM2R1y+d+/zNscGnxA7E70A+GToC1DGpaaBJ+XXhm+ho5GoM
+# j+vksSF7hmdYfn8f6CvkFLIW1oGhytowkGvub3XAsDYmsgg7/72+f2wTGN/GbaR5
+# Sa2Lf2GHBWj31HDjQpXonrubS7LitkE956+nGijJrWGwoEEYGU7tR5thle0+C2Fa
+# 6j56mJJRzT/JROeAiylCcvd5st2E6ifu/n16awIDAQABo4IBizCCAYcwDgYDVR0P
+# AQH/BAQDAgeAMAwGA1UdEwEB/wQCMAAwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwgw
+# IAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcBMB8GA1UdIwQYMBaAFLoW
+# 2W1NhS9zKXaaL3WMaiCPnshvMB0GA1UdDgQWBBSNZLeJIf5WWESEYafqbxw2j92v
+# DTBaBgNVHR8EUzBRME+gTaBLhklodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGln
+# aUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGltZVN0YW1waW5nQ0EuY3JsMIGQ
+# BggrBgEFBQcBAQSBgzCBgDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNl
+# cnQuY29tMFgGCCsGAQUFBzAChkxodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20v
+# RGlnaUNlcnRUcnVzdGVkRzRSU0E0MDk2U0hBMjU2VGltZVN0YW1waW5nQ0EuY3J0
+# MA0GCSqGSIb3DQEBCwUAA4ICAQANLSN0ptH1+OpLmT8B5PYM5K8WndmzjJeCKZxD
+# bwEtqzi1cBG/hBmLP13lhk++kzreKjlaOU7YhFmlvBuYquhs79FIaRk4W8+JOR1w
+# cNlO3yMibNXf9lnLocLqTHbKodyhK5a4m1WpGmt90fUCCU+C1qVziMSYgN/uSZW3
+# s8zFp+4O4e8eOIqf7xHJMUpYtt84fMv6XPfkU79uCnx+196Y1SlliQ+inMBl9AEi
+# ZcfqXnSmWzWSUHz0F6aHZE8+RokWYyBry/J70DXjSnBIqbbnHWC9BCIVJXAGcqlE
+# O2lHEdPu6cegPk8QuTA25POqaQmoi35komWUEftuMvH1uzitzcCTEdUyeEpLNypM
+# 81zctoXAu3AwVXjWmP5UbX9xqUgaeN1Gdy4besAzivhKKIwSqHPPLfnTI/KeGeAN
+# lCig69saUaCVgo4oa6TOnXbeqXOqSGpZQ65f6vgPBkKd3wZolv4qoHRbY2beayy4
+# eKpNcG3wLPEHFX41tOa1DKKZpdcVazUOhdbgLMzgDCS4fFILHpl878jIxYxYaa+r
+# PeHPzH0VrhS/inHfypex2EfqHIXgRU4SHBQpWMxv03/LvsEOSm8gnK7ZczJZCOct
+# kqEaEf4ymKZdK5fgi9OczG21Da5HYzhHF1tvE9pqEG4fSbdEW7QICodaWQR2EaGn
+# dwITHDGCBUwwggVIAgEBMIGGMHIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdp
+# Q2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xMTAvBgNVBAMTKERp
+# Z2lDZXJ0IFNIQTIgQXNzdXJlZCBJRCBDb2RlIFNpZ25pbmcgQ0ECEAo0hyG/vRZB
+# 2hmqZmgHQWAwCQYFKw4DAhoFAKB4MBgGCisGAQQBgjcCAQwxCjAIoAKAAKECgAAw
+# GQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisG
+# AQQBgjcCARUwIwYJKoZIhvcNAQkEMRYEFBBsllvO4DDw8sOfjkb5qTo4MbJ4MA0G
+# CSqGSIb3DQEBAQUABIIBAL67pK/VHiInJ5CoVN5+UsNprMv6Kpepn2GBh3/yBf5I
+# BLAJY4PBbooIRmFDNy9FPAVz8aML5zeAJK5z9YGGEIOFhTTeaPUgTBT3yXqmenRa
+# HNATW0Q1GT7Z4bdY87OHE6sSri77qsxMxomg8+p0hq7gTUMhct3/ZHrgShAmJmbH
+# XF2YVw/VEh9kKP1Oc6pdYjNekhZ8QqzZy7wUZUWsrt2FDJKcCvqXuXfW7qNOGLvv
+# Ws+x1QxinnWNQ0dux+nQ+w1c+zJSwKAxhHG/6uxqiDxv46eKlNc8H1xwBnXPgxAb
+# wUTAAurpPkvXzSqFyzS/68gzqff3Zf7nTCe2OEHqfJWhggMgMIIDHAYJKoZIhvcN
+# AQkGMYIDDTCCAwkCAQEwdzBjMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNl
+# cnQsIEluYy4xOzA5BgNVBAMTMkRpZ2lDZXJ0IFRydXN0ZWQgRzQgUlNBNDA5NiBT
+# SEEyNTYgVGltZVN0YW1waW5nIENBAhAKekqInsmZQpAGYzhNhpedMA0GCWCGSAFl
+# AwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUx
+# DxcNMjIwNzE3MTExMTMxWjAvBgkqhkiG9w0BCQQxIgQgA9vvubyx4Z8M10gS37ks
+# wmticjHtPJtXd43AKDASoVMwDQYJKoZIhvcNAQEBBQAEggIAs3BFFezl7YEwRMtz
+# Zgv3ZuGefcjV7ZfGnkeKTqvxRtW0wIrEhpJn8gQDDoAOaawXon/2UV/xgO4/PGs5
+# JuIVePN84k2xxVZFEHdCSPJZVIBC3Nat5+HsDqLWHC907gn16llnlAL67QkAKfMh
+# 99JPc+rQFkwDrim9qglt5PPN/SHAt2SegL9pLXMPEZwZasJaPGtPgrOuEO83/p/s
+# I9NMaXwCH71GjTmMSDTnkQEXr1yWbFNrYAYDuIwyL1A+Lujrt8lGpDVbvdv/8w1Q
+# HLNmPDFPjmRMe5sqaD2O1xKFOwXiUZHj4AwU/8aZLl4URYIc3eOuI1FF5Ol4isG3
+# rq0Tnxony8eVQd26XqygM17YlvdAp7uLBd/PN3sZs4TBQmemQzhGXbaNfk9xNBxW
+# kT1pewtUOi6gKJocBvFJ7hGmrs9pdY7xEsw0PNcJHh0XVPrXXoPJqwJMkZvC4AHg
+# 6d4r3sfugg42AWGE5ci2a1U9qRtz7cmhMZKCuldWJLJb/ojxotlKPfgHIUa3QW8L
+# 77K3KXog6/7BFp37xjj3njSWldlxhQkEZNJVzlpTXXSiFr9lW5WBDEi6JWa9Wnbg
+# sqM8a4OFTGmNj2thkGAIhRDLMu95/0dLnijVgembnFCm3fZq+Wauu9P7ZKcEuKZ3
+# dZWklB1tfjKChg3Q05H6auqHN90=
 # SIG # End signature block
